@@ -1,0 +1,106 @@
+---
+title: "MGC Statistic"
+author: "Eric Bridgeford"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{MGC}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, message=FALSE}
+library(mgc)
+library(reshape2)
+
+plot_sim_func <- function(X, Y, Xf, Yf, name, geom='line') {
+  if (!is.null(dim(Y))) {
+    Y <- Y[, 1]
+    Yf <- Yf[, 1]
+  }
+  if (geom == 'points') {
+    funcgeom <- geom_point
+  } else {
+    funcgeom <- geom_line
+  }
+  data <- data.frame(x1=X[,1], y=Y)
+  data_func <- data.frame(x1=Xf[,1], y=Yf)
+  ggplot(data, aes(x=x1, y=y)) +
+    funcgeom(data=data_func, aes(x=x1, y=y), color='red', size=3) +
+    geom_point() +
+    xlab("x") +
+    ylab("y") +
+    ggtitle(name) +
+    theme_bw()
+}
+
+plot_mtx <- function(Dx, main.title="Local Correlation Map", xlab.title="# X Neighbors", ylab.title="# Y Neighbors") {
+  data <- melt(Dx)
+  ggplot(data, aes(x=Var1, y=Var2, fill=value)) +
+    geom_tile() +
+    scale_fill_gradientn(name="l-corr",
+                         colours=c("#f2f0f7", "#cbc9e2", "#9e9ac8", "#6a51a3"),
+                         limits=c(min(Dx), max(Dx))) +
+    xlab(xlab.title) +
+    ylab(ylab.title) +
+    theme_bw() +
+    ggtitle(main.title)
+}
+```
+
+# MGC Statistic
+
+In this notebook, we show how to use the `MGC` statistic in a real and simulated context.
+
+## Simulated Data
+
+First, we use a simulated example, where `Y = XB + N`; that is, `Y` is linearly dependent on `X` with added gaussian noise.
+
+```{r}
+n=200 # 100 samples
+d=1 # simple 1-d case
+
+set.seed(12345)
+data <- mgc.sims.linear(n, d)  # data with noise
+func <- mgc.sims.linear(n, d, eps=0)  # source function
+```
+
+We first visualize the data:
+
+```{r, fig.width=4, fig.height=3}
+plot_sim_func(data$X, data$Y, func$X, func$Y, name="Linear Simulation")
+```
+
+which clearly shows a slightly linear relationship.
+
+visualizing the `MGC` image with 100 replicates:
+
+```{r}
+set.seed(12345)
+res <- mgc.test(data$X, data$Y, rep=20)  # 100 permutations test
+
+plot_mtx(res$localCorr, main.title="Local Correlation Map")
+
+print(res$optimalScale)
+print(res$statMGC)
+```
+
+As we can see, the local correlation plot suggests a strongly linear relationship. This is because intuitively, having more and more neighbors will help in our identification of the linear relationship between `x` and `y`, and as we can see in the local correlation map, `k=n=200` and `l=n=200` shows the best smoothed `p`.
+
+
+## Real Data
+
+
+In the below demo, we show the result of `MGC` to determine the relationship between the first (sepal length) and third (petal length) dimensions of the `iris` dataset:
+
+```{r, fig.width=6, fig.height=4}
+set.seed(12345)
+res <- mgc.test(iris[,1], iris[,3], rep=20)
+plot_mtx(res$localCorr, main.title="Local Correlation Map",
+         xlab.title="Sepal Length Neighbors", ylab.title="Petal Length Neighbors")
+
+print(res$optimalScale)
+print(res$statMGC)
+```
+
+viewing the corr map above we see that the relationship betweel Sepal and Petal Length is strongly linear.
