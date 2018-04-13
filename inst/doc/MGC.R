@@ -1,6 +1,7 @@
 ## ---- message=FALSE------------------------------------------------------
 library(mgc)
 library(reshape2)
+library(ggplot2)
 
 plot_sim_func <- function(X, Y, Xf, Yf, name, geom='line') {
   if (!is.null(dim(Y))) {
@@ -44,10 +45,10 @@ set.seed(12345)
 data <- mgc.sims.linear(n, d)  # data with noise
 func <- mgc.sims.linear(n, d, eps=0)  # source function
 
-## ---- fig.width=4, fig.height=3------------------------------------------
+## ---- fig.width=5, fig.height=3------------------------------------------
 plot_sim_func(data$X, data$Y, func$X, func$Y, name="Linear Simulation")
 
-## ------------------------------------------------------------------------
+## ---- fig.width=5, fig.height=4------------------------------------------
 set.seed(12345)
 res <- mgc.test(data$X, data$Y, rep=20)  # 100 permutations test
 
@@ -56,7 +57,7 @@ plot_mtx(res$localCorr, main.title="Local Correlation Map")
 print(res$optimalScale)
 print(res$statMGC)
 
-## ---- fig.width=6, fig.height=4------------------------------------------
+## ---- fig.width=5, fig.height=4------------------------------------------
 set.seed(12345)
 res <- mgc.test(iris[,1], iris[,3], rep=20)
 plot_mtx(res$localCorr, main.title="Local Correlation Map",

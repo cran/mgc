@@ -1,8 +1,8 @@
 Package: mgc
 Type: Package
 Title: Multiscale Graph Correlation
-Version: 1.0
-Date: 2018-04-10
+Version: 1.0.1
+Date: 2018-04-12
 Authors@R: c(person("Eric", "Bridgeford", role = c("aut", "cre"),
 	   	    email = "ericwb95@gmail.com"),
 	   	 person("Censheng", "Shen", role="aut",
@@ -23,10 +23,10 @@ LazyData: true
 RoxygenNote: 6.0.1
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2018-04-11 17:33:50 UTC; eric
+Packaged: 2018-04-13 14:09:15 UTC; eric
 Author: Eric Bridgeford [aut, cre],
   Censheng Shen [aut],
   Shangsi Wang [aut],
   Joshua Vogelstein [ths]
 Repository: CRAN
-Date/Publication: 2018-04-12 10:50:46 UTC
+Date/Publication: 2018-04-13 21:17:05 UTC

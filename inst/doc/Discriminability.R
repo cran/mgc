@@ -26,14 +26,14 @@ labs <- sample(rep(src_id, nobs))
 dat <- t(sapply(labs, function(lab) rnorm(d, mean=lab, sd=1)))
 discr.stat(dat, labs)  # expect high discriminability since measurements taken at a source have the same mean and sd of only 1
 
-## ---- fig.width=6, fig.height=4------------------------------------------
+## ---- fig.width=5, fig.height=4------------------------------------------
 Dx <- as.matrix(dist(dat[sort(labs, index=TRUE)$ix,]), method='euclidian')
 plot_mtx(Dx)
 
 ## ------------------------------------------------------------------------
 discr.stat(Dx, sort(labs))
 
-## ---- fig.width=6, fig.height=4------------------------------------------
+## ---- fig.width=5, fig.height=4------------------------------------------
 Dx <- as.matrix(dist(iris[sort(as.vector(iris$Species), index=TRUE)$ix,c(1,2,3,4)]))
 
 plot_mtx(Dx)
