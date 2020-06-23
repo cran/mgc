@@ -392,10 +392,272 @@ mgc.sims.ubern <- function(n, d, eps=0.5, p=0.5) {
   return(list(X=X, Y=Y))
 }
 
+#' Discriminability Linear Simulation
+#'
+#' A function to simulate multi-class data with a linear class-mean trend. The signal dimension is the dimension carrying all of the
+#' between-class difference, and the non-signal dimensions are noise.
+#'
+#' @import abind
+#' @param n the number of samples.
+#' @param d the number of dimensions. The first dimension will be the signal dimension; the remainders noise.
+#' @param K the number of classes in the dataset.
+#' @param signal.scale the scaling for the signal dimension. Defaults to \code{1}.
+#' @param signal.lshift the location shift for the signal dimension between the classes. Defaults to \code{1}.
+#' @param non.scale the scaling for the non-signal dimensions. Defaults to \code{1}.
+#' @param rotate whether to apply a random rotation. Defaults to \code{TRUE}.
+#' @param class.equal whether the number of samples/class should be equal, with each
+#' class having a prior of 1/K, or inequal, in which each class obtains a prior
+#' of k/sum(K) for k=1:K. Defaults to \code{TRUE}.
+#' @param ind whether to sample x and y independently. Defaults to \code{FALSE}.
+#' @author Eric Bridgeford
+#' @export
+discr.sims.linear <- function(n, d, K, signal.scale=1, signal.lshift=1, non.scale=1, rotate=FALSE, class.equal=TRUE, ind=FALSE) {
+  priors <- gen.sample.labels(K, class.equal=class.equal)
+  S <- diag(d)
+  S[1, 1] <- signal.scale
+  S[-c(1), -c(1)] <- non.scale
+  S <- abind(lapply(1:K, function(i) {
+    S
+  }), along=3)
+  mu <- c(1, rep(0, d-1))
+  mu[1] <- signal.lshift
+  mus <- abind(lapply(1:K, function(i) {
+    mu*i*signal.lshift
+  }), along=2)
+
+  if (rotate) {
+    res <- mgc.sims.random_rotate(mus, S)
+    mus <- res$mus
+    S <- res$S
+    rotate=res$Q
+  }
+
+  sim <- mgc.sims.sim_gmm(mus, S, n, priors=priors)
+  X <- sim$X; Y <- factor(sim$Y)
+  return(list(X=X, Y=Y, mus=mus, Sigmas=S, priors=priors, simtype="Linear",
+              params=list(signal.scale=signal.scale, signal.lshift=signal.lshift, non.scale=non.scale,
+                          rotate=rotate, class.equal=class.equal, ind=ind)))
+}
+
+#' Discriminability Exponential Simulation
+#'
+#' A function to simulate multi-class data with an Exponential class-mean trend.
+#'
+#' @import abind
+#' @param n the number of samples.
+#' @param d the number of dimensions. The first dimension will be the signal dimension; the remainders noise.
+#' @param K the number of classes in the dataset.
+#' @param signal.scale the scaling for the signal dimension. Defaults to \code{1}.
+#' @param signal.lshift the location shift for the signal dimension between the classes. Defaults to \code{1}.
+#' @param non.scale the scaling for the non-signal dimensions. Defaults to \code{1}.
+#' @param rotate whether to apply a random rotation. Defaults to \code{TRUE}.
+#' @param class.equal whether the number of samples/class should be equal, with each
+#' class having a prior of 1/K, or inequal, in which each class obtains a prior
+#' of k/sum(K) for k=1:K. Defaults to \code{TRUE}.
+#' @param ind whether to sample x and y independently. Defaults to \code{FALSE}.
+#' @author Eric Bridgeford
+#' @export
+discr.sims.exp <- function(n, d, K, signal.scale=1, signal.lshift=1, non.scale=1, rotate=FALSE, class.equal=TRUE, ind=FALSE) {
+  priors <- gen.sample.labels(K, class.equal=class.equal)
+  S <- diag(d)
+  S[1, 1] <- signal.scale; S[-c(1), -c(1)] <- non.scale
+  S <- abind(lapply(1:K, function(i) {
+    S
+  }), along=3)
+  mu <- c(1, rep(0, d-1))
+  mu[1] <- signal.lshift
+  mus <- abind(lapply(1:K, function(i) {
+    mu*exp(i)*signal.lshift
+  }), along=2)
+
+  if (rotate) {
+    res <- mgc.sims.random_rotate(mus, S)
+    mus <- res$mus
+    S <- res$S
+    rotate=res$Q
+  }
+
+  sim <- mgc.sims.sim_gmm(mus, S, n, priors=priors)
+  X <- sim$X; Y <- factor(sim$Y)
+  return(list(X=X, Y=Y, mus=mus, Sigmas=S, priors=priors, simtype="Linear",
+              params=list(signal.scale=signal.scale, signal.lshift=signal.lshift,
+                          non.scale=non.scale, rotate=rotate, class.equal=class.equal,
+                          ind=ind)))
+}
+
+#' Discriminability Spread Simulation
+#'
+#' A function to simulate data with the same mean that spreads as class id increases.
+#'
+#' @import abind
+#' @param n the number of samples.
+#' @param d the number of dimensions.
+#' @param K the number of classes in the dataset.
+#' @param signal.scale the scaling for the signal dimension. Defaults to \code{1}.
+#' @param rotate whether to apply a random rotation. Defaults to \code{TRUE}.
+#' @param class.equal whether the number of samples/class should be equal, with each
+#' class having a prior of 1/K, or inequal, in which each class obtains a prior
+#' of k/sum(K) for k=1:K. Defaults to \code{TRUE}.
+#' @param ind whether to sample x and y independently. Defaults to \code{FALSE}.
+#' @examples
+#' library(mgc)
+#' sim <- discr.sims.fat_tails(100, 3, 2)
+#' @author Eric Bridgeford
+#' @export
+discr.sims.fat_tails <- function(n, d, K, signal.scale=1, rotate=FALSE, class.equal=TRUE, ind=FALSE) {
+  priors <- gen.sample.labels(K, class.equal=class.equal)
+  S <- signal.scale*diag(d)
+  S <- abind(lapply(1:K, function(i) {
+    i^2*S
+  }), along=3)
+  mus <- array(0, dim=c(d, K))
+
+  if (rotate) {
+    res <- mgc.sims.random_rotate(mus, S)
+    mus <- res$mus
+    S <- res$S
+  }
+
+  sim <- mgc.sims.sim_gmm(mus, S, n, priors=priors)
+  X <- sim$X; Y <- factor(sim$Y)
+
+  if (ind) {
+    X <- mgc.sims.sim_gmm(mus, S, n, priors=priors)$X
+  }
+
+  return(list(X=X, Y=Y, mus=mus, Sigmas=S, priors=priors, simtype="Fat Tails",
+              params=list(signal.scale=signal.scale, rotate=rotate, class.equal=class.equal,
+                          ind=ind)))
+}
+
+#' Discriminability Cross Simulation
+#'
+#' A function to simulate data with the same mean that spreads as class id increases.
+#'
+#' @import abind
+#' @param n the number of samples.
+#' @param d the number of dimensions.
+#' @param K the number of classes in the dataset.
+#' @param signal.scale the scaling for the signal dimension. Defaults to \code{10}.
+#' @param non.scale the scaling for the non-signal dimensions. Defaults to \code{1}.
+#' @param mean.scale whether the magnitude of the difference in the means between the two classes.
+#' If a mean scale is requested, \code{d} should be at least > \code{K}.
+#' @param rotate whether to apply a random rotation. Defaults to \code{TRUE}.
+#' @param class.equal whether the number of samples/class should be equal, with each
+#' class having a prior of 1/K, or inequal, in which each class obtains a prior
+#' of k/sum(K) for k=1:K. Defaults to \code{TRUE}.
+#' @param ind whether to sample x and y independently. Defaults to \code{FALSE}.
+#' @examples
+#' library(mgc)
+#' sim <- discr.sims.cross(100, 3, 2)
+#' @author Eric Bridgeford
+#' @export
+discr.sims.cross <- function(n, d, K, signal.scale=10, non.scale=1, mean.scale=0,
+                             rotate=FALSE, class.equal=TRUE, ind=FALSE) {
+  priors <- gen.sample.labels(K, class.equal=class.equal)
+  S <- diag(d)
+  S <- abind(lapply(1:K, function(i) {
+    S.class <- S
+    S.class[i,i] <- signal.scale
+    S.class[-c(i), -c(i)] <- non.scale
+    S.class
+  }), along=3)
+  mus <- array(0, dim=c(d, K))
+  if (mean.scale > 0) {
+    if (d < K) {
+      stop("If a mean scale is requested, d should be >= K.")
+    }
+    diag(mus) <- mean.scale
+  }
+
+  if (rotate) {
+    res <- mgc.sims.random_rotate(mus, S)
+    mus <- res$mus
+    S <- res$S
+  }
+
+  sim <- mgc.sims.sim_gmm(mus, S, n, priors=priors)
+  X <- sim$X; Y <- factor(sim$Y)
+
+  if (ind) {
+    X <- mgc.sims.sim_gmm(mus, S, n, priors=priors)$X
+  }
+
+  return(list(X=X, Y=Y, mus=mus, Sigmas=S, priors=priors, simtype="Logarithmic",
+              params=list(signal.scale=signal.scale, rotate=rotate, class.equal=class.equal,
+                          ind=ind)))
+}
+#' Discriminability Radial Simulation
+#'
+#' A function to simulate data with the same mean with radial symmetry as class id increases.
+#'
+#' @import abind
+#' @param n the number of samples.
+#' @param d the number of dimensions.
+#' @param K the number of classes in the dataset.
+#' @param er.scale the scaling for the error of the samples. Defaults to \code{0.1}.
+#' @param r the radial spacing between each class. Defaults to \code{1}.
+#' @param class.equal whether the number of samples/class should be equal, with each
+#' class having a prior of 1/K, or inequal, in which each class obtains a prior
+#' of k/sum(K) for k=1:K. Defaults to \code{TRUE}.
+#' @param ind whether to sample x and y independently. Defaults to \code{FALSE}.
+#' @examples
+#' library(mgc)
+#' sim <- discr.sims.radial(100, 3, 2)
+#' @author Eric Bridgeford
+#' @export
+discr.sims.radial <- function(n, d, K, er.scale=0.1, r=1, class.equal=TRUE, ind=FALSE) {
+  priors <- gen.sample.labels(K, class.equal=class.equal)
+
+  class <- 1:K
+  # sample n points from 1:K for assignment of class label
+  Y <- sample(class, size=n, replace=TRUE, prob=priors)
+  # initialize X
+  X <- array(NaN, dim=c(n, d))
+
+  # loop over class labels that we are sampling from
+  for (i in class[class %in% Y]) {
+    if (i == 1) {
+      f <- mgc.sims.2ball
+    } else {
+      f <- mgc.sims.2sphere
+    }
+    repvec <- Y == i
+    pts <- do.call(f, list(sum(repvec), d, r=r*i, cov.scale=er.scale))
+    X[repvec,] <- pts
+  }
+
+  if (ind) {
+    Y <- sample(class, size=n, replace=TRUE, prob=priors)
+  }
+  return(list(X=X, Y=factor(Y), priors=priors, simtype="Radial",
+              params=list(er.scale=er.scale, r=r, class.equal=class.equal,
+                          ind=ind)))
+}
+
+#' A helper function for simulating sample labels
+#' @param K the number of classes
+#' @param class.equal whether the number of samples/class should be equal, with each
+#' class having a prior of 1/K, or inequal, in which each class obtains a prior
+#' of k/sum(K) for k=1:K. Defaults to \code{TRUE}.
+#' @keywords internal
+gen.sample.labels <- function(K, class.equal=TRUE) {
+  if (isTRUE(class.equal)) {
+    priors <- array(1/K, dim=c(K)) # prior is just 1/K for all k
+  } else {
+    priors <- (1:K)/sum(1:K) # prior is k/sum(K) for all k
+  }
+  # return class priors
+  return(priors)
+}
+
+
+#'
 #' A helper function to generate a d-dimensional linear transformation matrix.
 #' @param d the number of dimensions.
 #' @return A \code{[d]} the coefficient vector.
 #' @author Eric Bridgeford
+#' @keywords internal
 gen.coefs <- function(d) {
   A = as.array(1/1:d, dim=c(d, 1))
   return(A)
@@ -409,7 +671,125 @@ gen.coefs <- function(d) {
 #' @param x \code{[n, d]} the simulated data matrix.
 #' @author Eric Bridgeford
 #' @importFrom stats runif
+#' @keywords internal
 gen.x.unif <- function(n, d, a=-1, b=1) {
   x <- array(runif(n=(n*d), min=a, max=b), dim=c(n, d))
   return(x)
+}
+
+#' GMM Simulate
+#'
+#' A helper function for simulating from Gaussian Mixture.
+#' @param mus \code{[d, K]} the mus for each class.
+#' @param Sigmas \code{[d,d,K]} the Sigmas for each class.
+#' @param n the number of examples.
+#' @param priors \code{K} the priors for each class.
+#' @return A list with the following:
+#' \item{X}{\code{[n, d]} the simulated data.}
+#' \item{Y}{\code{[n]} the labels for each data point.}
+#' \item{priors}{\code{[K]} the priors for each class.}
+#' @author Eric Bridgeford
+#' @importFrom MASS mvrnorm
+#' @keywords internal
+mgc.sims.sim_gmm <- function(mus, Sigmas, n, priors) {
+  K <- dim(mus)[2]
+  labs <- sample(1:K, size=n, prob=priors, replace=TRUE)
+  ylabs <- as.vector(sort(unique(labs)))
+  res <- sapply(ylabs, function(y) mvrnorm(n=sum(labs == y), mus[,y], Sigmas[,,y]), USE.NAMES=TRUE, simplify=FALSE)
+  X <- array(0, dim=c(n, dim(Sigmas)[1]))
+  for (y in ylabs) {
+    X[labs == y,] <- res[[y]]
+  }
+  return(list(X=X, Y=labs, priors=priors))
+}
+
+#' Sample Random Rotation
+#'
+#' A helper function for estimating a random rotation matrix.
+#' @importFrom stats rnorm
+#' @param d dimensions to generate a rotation matrix for.
+#' @return the rotation matrix
+#' @author Eric Bridgeford
+#' @keywords internal
+mgc.sims.rotation <- function(d) {
+  Q <- qr.Q(qr(array(rnorm(d*d), dim=c(d, d))))
+  if (det(Q) < -.99) {
+    Q[,1] <- -Q[,1]
+  }
+  return(Q)
+}
+
+#' Random Rotation
+#'
+#' A helper function for applying a random rotation to gaussian parameter set.
+#' @param mus means per class.
+#' @param Sigmas covariances per class.
+#' @param Q rotation to use, if any
+#' @author Eric Bridgeford
+#' @keywords internal
+mgc.sims.random_rotate <- function(mus, Sigmas, Q=NULL) {
+  dimm <- dim(mus)
+  K <- dimm[2]
+  d <- dim(mus)[1]
+  if (is.null(Q)) {
+    Q <- mgc.sims.rotation(d)
+  } else if (!isTRUE(all.equal(dim(Q), c(d, d)))) {
+    stop(sprintf("You have specified a rotation matrix with dimensions (%d, %d), but should be (%d, %d).", dim(Q)[1], dim(Q)[2], d, d))
+  }
+
+  for (i in 1:K) {
+    mus[,i] <- Q %*% mus[,i,drop=FALSE]
+    Sigmas[,,i] <- Q %*% Sigmas[,,i] %*% t(Q)
+  }
+  return(list(mus=mus, S=Sigmas, Q=Q))
+}
+
+#' Sample from Unit 2-Ball
+#'
+#' Sample from the 2-ball in d-dimensions.
+#'
+#' @importFrom MASS mvrnorm
+#' @param n the number of samples.
+#' @param d the number of dimensions.
+#' @param r the radius of the 2-ball. Defaults to \code{1}.
+#' @param cov.scale if desired, sample from 2-ball with error sigma. Defaults to \code{NaN},
+#' which has no noise.
+#' @return the points sampled from the ball, as a \code{[n, d]} array.
+#' @examples
+#' library(mgc)
+#' # sample 100 points from 3-d 2-ball with radius 2
+#' X <- mgc.sims.2ball(100, 3, 2)
+#' @author Eric Bridgeford
+#' @export
+mgc.sims.2ball <- function(n, d, r=1, cov.scale=0) {
+  Y <- matrix(mvrnorm(n=n, mu=array(0, dim=c(d, 1)), Sigma=diag(d)), nrow=n)
+  u <- runif(n)
+  r <- r * u^(1/d)
+  X <- r * Y/sqrt(apply(Y^2, 1, sum)) + matrix(mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=cov.scale*diag(d)), nrow=n)
+  return(X)
+}
+
+#' Sample from Unit 2-Sphere
+#'
+#' Sample from the 2-sphere in d-dimensions.
+#'
+#' @importFrom MASS mvrnorm ginv
+#' @param n the number of samples.
+#' @param d the number of dimensions.
+#' @param r the radius of the 2-ball. Defaults to \code{1}.
+#' @param cov.scale if desired, sample from 2-ball with error sigma. Defaults to \code{0},
+#' which has no noise.
+#' @return the points sampled from the sphere, as a \code{[n, d]} array.
+#' @examples
+#' library(mgc)
+#' # sample 100 points from 3-d 2-sphere with radius 2
+#' X <- mgc.sims.2sphere(100, 3, 2)
+#' @author Eric Bridgeford
+#' @export
+mgc.sims.2sphere <- function(n, d, r, cov.scale=0) {
+  u <- matrix(mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=diag(d)), nrow=n)
+  unorm <- diag(sqrt(apply(u^2, 1, sum)))
+  pts <- r*(ginv(unorm) %*% u)
+  pts <- pts + matrix(mvrnorm(n=n, mu=array(0, dim=c(d,1)), Sigma=cov.scale*diag(d)), nrow=n)
+  return(pts)
 }

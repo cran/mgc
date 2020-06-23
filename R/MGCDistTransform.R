@@ -27,11 +27,10 @@
 #' n=200; d=2
 #' data <- mgc.sims.linear(n, d)
 #' Dx <- as.matrix(dist(data$X), nrow=n); Dy <- as.matrix(dist(data$Y), nrow=n)
-#' dt <- mgc.distTransform(Dx, Dy)
+#' dt <- mgc.dist.xfm(Dx, Dy)
 #'
 #' @export
-#'
-mgc.distTransform <- function(X, Y, option='mgc', optionRk=TRUE){
+mgc.dist.xfm <- function(X, Y, option='mgc', optionRk=TRUE){
   if (option=='rank') {
     optionRk=TRUE # do ranking or not, 0 to no ranking
   }
@@ -54,6 +53,7 @@ mgc.distTransform <- function(X, Y, option='mgc', optionRk=TRUE){
 #' \item{\code{A}}{is the centered distance matrices}
 #' \item{\code{RX}}{is the column rank matrices of X.}
 #'
+#' @keywords internal
 DistCentering<-function(X,option,optionRk){
   n=nrow(X)
   if (optionRk!=0){
@@ -97,6 +97,7 @@ DistCentering<-function(X,option,optionRk){
 #'
 #' @return \code{disRank} is the column rank matrices of \code{X}.
 #'
+#' @keywords internal
 DistRanks <- function(dis) {
   n=nrow(dis)
   disRank=matrix(0,n,n)
@@ -114,4 +115,33 @@ DistRanks <- function(dis) {
     disRank[,i]=tmp
   }
   return(disRank)
+}
+
+#' Distance
+#'
+#' A function that returns a distance matrix given a collection of observations.
+#'
+#' @importFrom stats dist
+#' @param X \code{[n x d]} a data matrix for \code{d} samples of \code{d} variables.
+#' @param method the method for computing distances. Defaults to \code{'euclidean'}. See \link[stats]{dist} for details. Also
+#' includes a "ohe" option, which one-hot-encodes the matrix when computing distances.
+#' @return a \code{[n x n]} distance matrix indicating the pairwise distances between all samples passed in.
+#' @author Eric Bridgeford
+#' @export
+mgc.distance <- function(X, method='euclidean') {
+  if (method == "ohe") {
+    ylabs <- unique(X); K <- length(ylabs); n <- length(X)
+    # one-hot-encode the y-labels for 0-1 loss under euclidian distance
+    Yh <- array(0, dim=c(n, K))
+    for (i in 1:K) {
+      Yh[X == ylabs[i],i] <- 1
+    }
+
+    # compute distance...
+    D <- as.matrix(dist(Yh, method='binary'), nrow=n)
+  } else {
+    D <- as.matrix(dist(X, diag=TRUE, method=method))
+  }
+
+  return(D)
 }

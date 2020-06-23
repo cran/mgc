@@ -1,26 +1,13 @@
----
-title: "Canonical Dependence Simulations"
-author: "Eric Bridgeford"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{sims}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
-```{r setup, include=FALSE}
+## ----setup, include=FALSE-----------------------------------------------------
 knitr::opts_chunk$set(fig.width=4, fig.height=3)
-```
 
-```{r, message=FALSE}
+## ---- message=FALSE-----------------------------------------------------------
 require(mgc)
 require(ggplot2)
 n=400
 d=1
-```
 
-```{r}
+## -----------------------------------------------------------------------------
 plot_sim <- function(X, Y, name) {
   if (!is.null(dim(Y))) {
     Y <- Y[, 1]
@@ -54,91 +41,63 @@ plot_sim_func <- function(X, Y, Xf, Yf, name, geom='line') {
     ggtitle(name) +
     theme_bw()
 }
-```
 
-In this notebook, we will review the simulation algorithms provided in the `mgc` paper. All simulations will be `n=400` examples in `d=1` dimensions, since some of the plots do not look obviously of the given simulation type in higher dimensions. The simulation is plotted along with the true distribution of the given simulation where possible.
-
-# Linear
-
-```{r}
+## -----------------------------------------------------------------------------
 data <- mgc.sims.linear(n, d)
 X <- data$X; Y <- data$Y
 func <- mgc.sims.linear(n, d, eps=0)
 Xf <- func$X; Yf <- func$Y
 plot_sim_func(X, Y, Xf, Yf, "Linear Simulation")
-```
 
-# Exponential
-
-```{r}
+## -----------------------------------------------------------------------------
 data <- mgc.sims.exp(n, d)
 X <- data$X; Y <- data$Y
 func <- mgc.sims.exp(n, d, eps=0)
 Xf <- func$X; Yf <- func$Y
 plot_sim_func(X, Y, Xf, Yf, "Exponential Simulation")
-```
 
-# Cubic
-
-```{r}
+## -----------------------------------------------------------------------------
 data <- mgc.sims.cubic(n, d)
 X <- data$X; Y <- data$Y
 func <- mgc.sims.cubic(n, d, eps=0)
 Xf <- func$X; Yf <- func$Y
 plot_sim_func(X, Y, Xf, Yf, "Cubic Simulation")
-```
 
-# Joint-Normal
-
-```{r}
+## -----------------------------------------------------------------------------
 data <- mgc.sims.joint(n, d)
 X <- data$X; Y <- data$Y
 plot_sim(X, Y, "Joint-Normal Simulation")
-```
-# Step
 
-```{r}
+## -----------------------------------------------------------------------------
 data <- mgc.sims.step(n, d)
 X <- data$X; Y <- data$Y
 func <- mgc.sims.step(n, d, eps=0)
 Xf <- func$X; Yf <- func$Y
 plot_sim_func(X, Y, Xf, Yf, "Step-Fn Simulation")
-```
 
-# Quadratic
-
-```{r}
+## -----------------------------------------------------------------------------
 data <- mgc.sims.quad(n, d)
 X <- data$X; Y <- data$Y
 func <- mgc.sims.quad(n, d, eps=0)
 Xf <- func$X; Yf <- func$Y
 plot_sim_func(X, Y, Xf, Yf, "Quadratic Simulation")
-```
 
-# W-Shape
-
-```{r}
+## -----------------------------------------------------------------------------
 data <- mgc.sims.wshape(n, d)
 X <- data$X; Y <- data$Y
 func <- mgc.sims.wshape(n, d, eps=0)
 Xf <- func$X; Yf <- func$Y
 plot_sim_func(X, Y, Xf, Yf, "W Simulation")
-```
 
-# Spiral
-
-```{r}
+## -----------------------------------------------------------------------------
 data <- mgc.sims.spiral(n, d)
 X <- data$X; Y <- data$Y
 func <- mgc.sims.spiral(n=1000, d, eps=0)
 Xf <- func$X; Yf <- func$Y
 plot_sim_func(X, Y, Xf, Yf, "Spiral Simulation", geom='points')
-```
 
-# Uncorrelated Bernoulli
-
-```{r}
+## -----------------------------------------------------------------------------
 data <- mgc.sims.ubern(n, d)
 X <- data$X; Y <- data$Y
 plot_sim(X, Y, "Uncorrelated Bernoulli Simulation")
-```
+
